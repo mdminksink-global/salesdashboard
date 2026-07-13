@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, Plus, Users, MoreHorizontal, ShieldCheck, Trophy, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Plus, Users, MoreHorizontal, ShieldCheck, Trophy } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { classNames } from '../lib/utils';
@@ -15,7 +15,7 @@ const ADMIN_ITEMS = [
   { to: '/', label: 'Home', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Team', icon: ShieldCheck },
   { to: '/team', label: 'Ranking', icon: Trophy },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+  { to: '/more', label: 'More', icon: MoreHorizontal },
 ];
 
 export default function BottomNav() {

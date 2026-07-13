@@ -29,7 +29,6 @@ export default function Sidebar({ open, onClose }) {
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
         { to: '/admin/users', label: 'Team & Users', icon: ShieldCheck },
         { to: '/team', label: 'Leaderboard', icon: UsersRound },
-        { to: '/settings', label: 'Settings', icon: SettingsIcon },
       ]
     : [
         ...NAV,

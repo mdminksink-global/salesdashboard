@@ -19,7 +19,8 @@ const ADMIN_LINKS = [
 export default function More() {
   const { isAdmin, signOut } = useAuth();
   const links = [...(isAdmin ? ADMIN_LINKS : REP_LINKS)];
-  links.push({ to: '/settings', label: 'Settings', desc: 'Profile and targets', icon: SettingsIcon });
+  // Reps get a Settings entry (profile + personal target); admins don't need it.
+  if (!isAdmin) links.push({ to: '/settings', label: 'Settings', desc: 'Profile and targets', icon: SettingsIcon });
 
   return (
     <div className="space-y-2 animate-fade-in">

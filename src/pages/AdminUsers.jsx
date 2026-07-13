@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { UserPlus, Target, BarChart3, ShieldCheck, User as UserIcon, Info, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -140,7 +140,7 @@ export default function AdminUsers() {
       </div>
 
       {addOpen && <AddSalesperson onClose={() => setAddOpen(false)} />}
-      {targetFor && <SetTargetModal profile={targetFor} period={period} existing={targetFor2(targetFor.id)} onClose={() => setTargetFor(null)} />}
+      {targetFor && <SetTargetModal profile={targetFor} targets={targets} onClose={() => setTargetFor(null)} />}
 
       <ConfirmDialog
         open={!!toRemove}
@@ -227,25 +227,47 @@ function AddSalesperson({ onClose }) {
   );
 }
 
-function SetTargetModal({ profile, period, existing, onClose }) {
-  const [visitGoal, setVisitGoal] = useState(existing?.visit_goal ?? '');
-  const [revenueGoal, setRevenueGoal] = useState(existing?.revenue_goal ?? '');
+function SetTargetModal({ profile, targets, onClose }) {
+  const goalFor = (m) => targets.find((t) => t.owner_id === profile.id && t.period === m);
+  const [month, setMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [visitGoal, setVisitGoal] = useState(() => goalFor(format(new Date(), 'yyyy-MM'))?.visit_goal ?? '');
+  const [revenueGoal, setRevenueGoal] = useState(() => goalFor(format(new Date(), 'yyyy-MM'))?.revenue_goal ?? '');
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState('');
+
+  // Switching month loads whatever goals are already saved for it.
+  const onMonth = (m) => {
+    if (!m) return;
+    setMonth(m);
+    const g = goalFor(m);
+    setVisitGoal(g?.visit_goal ?? '');
+    setRevenueGoal(g?.revenue_goal ?? '');
+    setSaved('');
+  };
+
   const save = async () => {
     setBusy(true);
-    await setTarget(profile.id, period, visitGoal, revenueGoal);
+    await setTarget(profile.id, month, visitGoal, revenueGoal);
     setBusy(false);
-    onClose();
+    setSaved(`Saved for ${format(parseISO(month + '-01'), 'MMMM yyyy')}`);
   };
+
   return (
-    <Modal open onClose={onClose} title={`Target · ${profile.full_name || profile.email}`} subtitle={format(new Date(), 'MMMM yyyy')}
+    <Modal open onClose={onClose} title={`Targets · ${profile.full_name || profile.email}`} subtitle="Set goals for any month"
       footer={<>
-        <button className="btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn-ghost" onClick={onClose}>Close</button>
         <button className="btn-primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save target'}</button>
       </>}>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="label">Visits goal</label><input type="number" min="0" className="input num" value={visitGoal} onChange={(e) => setVisitGoal(e.target.value)} placeholder="e.g. 60" /></div>
-        <div><label className="label">Revenue goal (₹)</label><input type="number" min="0" className="input num" value={revenueGoal} onChange={(e) => setRevenueGoal(e.target.value)} placeholder="e.g. 500000" /></div>
+      <div className="space-y-4">
+        <div>
+          <label className="label">Month</label>
+          <input type="month" className="input" value={month} onChange={(e) => onMonth(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="label">Visits goal</label><input type="number" min="0" className="input num" value={visitGoal} onChange={(e) => { setVisitGoal(e.target.value); setSaved(''); }} placeholder="e.g. 60" /></div>
+          <div><label className="label">Revenue goal (₹)</label><input type="number" min="0" className="input num" value={revenueGoal} onChange={(e) => { setRevenueGoal(e.target.value); setSaved(''); }} placeholder="e.g. 500000" /></div>
+        </div>
+        {saved && <div className="text-sm text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2">{saved} — pick another month to set more.</div>}
       </div>
     </Modal>
   );

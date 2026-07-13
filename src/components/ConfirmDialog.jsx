@@ -6,9 +6,14 @@ export default function ConfirmDialog({ open, onClose, onConfirm, title, message
   const [busy, setBusy] = useState(false);
   const run = async () => {
     setBusy(true);
-    await onConfirm();
-    setBusy(false);
-    onClose();
+    try {
+      await onConfirm();
+      onClose();
+    } catch {
+      // Keep the dialog open — the caller surfaces the error in `message`.
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <Modal

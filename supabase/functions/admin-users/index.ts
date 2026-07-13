@@ -38,8 +38,20 @@ Deno.serve(async (req) => {
   const { data: prof } = await admin.from('profiles').select('role').eq('id', user.id).single();
   if (prof?.role !== 'admin') return json({ error: 'Forbidden — admin only' }, 403);
 
+  const payload = await req.json().catch(() => ({}));
+
+  // ── DELETE a user (cascades to their profile + all their data) ──
+  if (payload.action === 'delete') {
+    const { userId } = payload;
+    if (!userId) return json({ error: 'userId is required' }, 400);
+    if (userId === user.id) return json({ error: 'You cannot remove your own account' }, 400);
+    const { error: dErr } = await admin.auth.admin.deleteUser(userId);
+    if (dErr) return json({ error: dErr.message }, 400);
+    return json({ deleted: userId });
+  }
+
   // 3) Create the salesperson.
-  const { email, password, full_name, role = 'rep' } = await req.json().catch(() => ({}));
+  const { email, password, full_name, role = 'rep' } = payload;
   if (!email || !password) return json({ error: 'email and password are required' }, 400);
   if (String(password).length < 6) return json({ error: 'password must be at least 6 characters' }, 400);
 

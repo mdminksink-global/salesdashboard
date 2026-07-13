@@ -21,6 +21,21 @@ export async function createRep({ email, password, full_name, role = 'rep' }) {
   return data;
 }
 
+/** Permanently remove a user (auth account + all their data). Admin-only, via Edge Function. */
+export async function deleteRep(userId) {
+  const { data, error } = await supabase.functions.invoke('admin-users', {
+    body: { action: 'delete', userId },
+  });
+  if (error) {
+    let msg = error.message || 'Request failed';
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) msg = ctx.error; } catch { /* ignore */ }
+    if (/not found|404|Failed to send/i.test(msg)) msg = 'The admin-users function isn’t deployed yet (see README).';
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 /** Change a user's role (admin | rep). Allowed by RLS for admins. */
 export function setRole(userId, role) {
   return supabase.from('profiles').update({ role }).eq('id', userId);

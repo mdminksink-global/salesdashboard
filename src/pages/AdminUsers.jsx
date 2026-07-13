@@ -1,15 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { UserPlus, Target, BarChart3, ShieldCheck, User as UserIcon, Info } from 'lucide-react';
+import { UserPlus, Target, BarChart3, ShieldCheck, User as UserIcon, Info, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useProfiles } from '../hooks/useProfiles';
 import { useCollection } from '../hooks/useCollection';
 import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
 import { initials, fmtCompact, classNames } from '../lib/utils';
-import { createRep, setRole, setActive, setTarget } from '../lib/adminApi';
+import { createRep, deleteRep, setRole, setActive, setTarget } from '../lib/adminApi';
 
 export default function AdminUsers() {
   const { isAdmin, user } = useAuth();
@@ -20,6 +21,8 @@ export default function AdminUsers() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [targetFor, setTargetFor] = useState(null); // profile
+  const [toRemove, setToRemove] = useState(null);    // profile
+  const [removeErr, setRemoveErr] = useState('');
 
   const stats = useMemo(() => {
     const byOwner = {};
@@ -117,6 +120,14 @@ export default function AdminUsers() {
                       <div className="flex justify-end gap-1.5">
                         <button className="btn-ghost btn-sm" onClick={() => setTargetFor(p)}><Target className="h-4 w-4" /> Target</button>
                         <Link className="btn-ghost btn-sm" to={`/admin/reps/${p.id}`}><BarChart3 className="h-4 w-4" /> Report</Link>
+                        <button
+                          className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          onClick={() => { setRemoveErr(''); setToRemove(p); }}
+                          disabled={self}
+                          title={self ? "You can't remove your own account" : 'Remove user'}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -130,6 +141,23 @@ export default function AdminUsers() {
 
       {addOpen && <AddSalesperson onClose={() => setAddOpen(false)} />}
       {targetFor && <SetTargetModal profile={targetFor} period={period} existing={targetFor2(targetFor.id)} onClose={() => setTargetFor(null)} />}
+
+      <ConfirmDialog
+        open={!!toRemove}
+        onClose={() => setToRemove(null)}
+        title="Remove user"
+        message={
+          <>
+            Permanently remove <b>{toRemove?.full_name || toRemove?.email}</b> and <b>all their data</b> (visits, clients,
+            deals, quotes, tasks)? This cannot be undone. To keep their data, use <b>Deactivate</b> instead.
+            {removeErr && <span className="block mt-2 text-rose-600">{removeErr}</span>}
+          </>
+        }
+        onConfirm={async () => {
+          try { await deleteRep(toRemove.id); }
+          catch (e) { setRemoveErr(e.message); throw e; }
+        }}
+      />
     </div>
   );
 }

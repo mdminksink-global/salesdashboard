@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { Target, User, LogOut, Save, CheckCircle2, Bell, BellOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { initials } from '../lib/utils';
+import { initials, fmtCurrency } from '../lib/utils';
 import { pushSupported, isPushEnabled, enablePush, disablePush } from '../lib/push';
 
 export default function Settings() {
@@ -45,16 +45,6 @@ export default function Settings() {
     flash('Profile saved');
   };
 
-  const saveTarget = async () => {
-    setBusy(true);
-    await supabase.from('targets').upsert(
-      { owner_id: user.id, period, visit_goal: Number(visitGoal) || 0, revenue_goal: Number(revenueGoal) || 0 },
-      { onConflict: 'owner_id,period' }
-    );
-    setBusy(false);
-    flash('Target saved');
-  };
-
   return (
     <div className="max-w-2xl space-y-5 animate-fade-in">
       {saved && (
@@ -82,17 +72,28 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Monthly target */}
+      {/* Monthly target — set by admin, read-only */}
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-1">
           <Target className="h-4 w-4 text-accent-600" /> <h3 className="text-sm font-bold text-slate-900">This Month's Target</h3>
         </div>
-        <p className="text-xs text-slate-500 mb-4">Set your goals for {format(new Date(), 'MMMM yyyy')}. Progress shows on your dashboard.</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="label">Visits goal</label><input type="number" min="0" className="input num" value={visitGoal} onChange={(e) => setVisitGoal(e.target.value)} placeholder="e.g. 60" /></div>
-          <div><label className="label">Revenue goal (₹)</label><input type="number" min="0" className="input num" value={revenueGoal} onChange={(e) => setRevenueGoal(e.target.value)} placeholder="e.g. 500000" /></div>
-        </div>
-        <button className="btn-primary mt-4" onClick={saveTarget} disabled={busy}><Save className="h-4 w-4" /> Save target</button>
+        <p className="text-xs text-slate-500 mb-4">Assigned by your admin for {format(new Date(), 'MMMM yyyy')}. Progress shows on your dashboard.</p>
+        {Number(visitGoal) > 0 || Number(revenueGoal) > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-4">
+              <div className="label mb-1">Visits goal</div>
+              <div className="num text-2xl font-bold text-slate-900">{visitGoal || 0}</div>
+            </div>
+            <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-4">
+              <div className="label mb-1">Revenue goal</div>
+              <div className="num text-2xl font-bold text-slate-900">{fmtCurrency(revenueGoal || 0)}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-500 bg-slate-50 ring-1 ring-slate-200 rounded-xl px-4 py-3">
+            No target set for this month yet — your admin will assign one.
+          </div>
+        )}
       </div>
 
       {/* Notifications */}

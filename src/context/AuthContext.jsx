@@ -54,7 +54,15 @@ export function AuthProvider({ children }) {
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password, fullName) =>
       supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } }),
-    signOut: () => supabase.auth.signOut(),
+    // Local sign-out clears the session without a server round-trip that can
+    // fail on a stale token; we also reset state explicitly so the UI always
+    // returns to the login screen.
+    signOut: async () => {
+      try { await supabase.auth.signOut({ scope: 'local' }); }
+      catch { /* ignore — clear locally regardless */ }
+      setSession(null);
+      setProfile(null);
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

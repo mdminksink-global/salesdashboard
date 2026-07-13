@@ -87,7 +87,6 @@ function RepDashboard() {
         <div className="card p-5 lg:col-span-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5"><Target className="h-4 w-4 text-accent-600" /> {format(new Date(), 'MMMM')} Target</h3>
-            <Link to="/settings" className="text-xs text-brand-600 font-semibold hover:text-brand-700">Set goal</Link>
           </div>
           {target && (target.visit_goal > 0 || target.revenue_goal > 0) ? (
             <div className="flex flex-wrap gap-6">
@@ -102,7 +101,7 @@ function RepDashboard() {
               />
             </div>
           ) : (
-            <EmptyState icon={Target} title="No target set" hint="Set a monthly goal in Settings." />
+            <EmptyState icon={Target} title="No target set" hint="Your admin will assign your monthly goal." />
           )}
         </div>
 
